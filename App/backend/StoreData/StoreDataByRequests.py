@@ -3,7 +3,7 @@ from App.libs.libs import requests, ray, BeautifulSoup
 
 # @ray.remote(num_cpus=6)
 class StoreDataByRequests:
-    def __init__(self):
+    def __init__(self, stock_name: str):
         self.stockname='AAPL'
         self.data = None
         self.user_agent = {'user_agent': None}
@@ -21,6 +21,9 @@ class StoreDataByRequests:
 
 
 if __name__ == '__main__':
+    """
+    Determinar o futuro dessa classe
+    """
     # sd = StoreDataByRequests.remote()
     # data = ray.get(sd.get_user_agent.remote())
     sd = StoreDataByRequests()
