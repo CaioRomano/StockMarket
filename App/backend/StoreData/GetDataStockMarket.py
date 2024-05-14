@@ -49,7 +49,7 @@ class GetDataStockMarket:
         """
         Determina o período adequado para um dado intervalo
 
-        :return: Retorna um período
+        :return: Retorna o período adequado para um dado intervalo
         """
         period = 'max'
         if self._interval == '1m':
@@ -70,6 +70,7 @@ class GetDataStockMarket:
             stock_ticker = yf.Ticker(self._stock_name)
             period = self._determine_period()
             self._stock_data = stock_ticker.history(period=period, interval=self._interval)
+            # print(period, self._stock_data.columns, self._stock_data.index)
         except Exception as e:
             print(e)
         else:
@@ -98,6 +99,7 @@ class GetDataStockMarket:
         """
         try:
             df = pd.read_csv(name_csv)
+            df = df.rename(columns={'Datetime': 'Date'}, errors='ignore')
             df['Date'] = pd.to_datetime(df['Date'], utc=True)
             news_data = self._stock_data[self._stock_data.index > df['Date'].max()]
             if not len(news_data) == 0:
@@ -105,7 +107,7 @@ class GetDataStockMarket:
                 return True
             else:
                 return False
-        except Exception as e:
+        except ValueError as e:
             print('bebe, algo deu errado')
             print(e)
 
@@ -181,7 +183,6 @@ class GetDataStockMarket:
 if __name__ == '__main__':
     """
     Deve permitir que visualize primeiro o dia para não ter de fazer uma requisição atoa.
-    Verificar o motivo de não estar armazenando todas as informações num único local.
     """
     getdata = GetDataStockMarket(stock_name=['AAPL', 'PETR4.SA', 'TSLA'], interval='all')
     # getdata.collect_data()
