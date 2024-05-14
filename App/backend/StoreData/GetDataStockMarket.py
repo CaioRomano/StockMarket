@@ -1,4 +1,4 @@
-from App.libs.libs import yf, os, DataFrame, pd, typing
+from App.libs.libs import yf, os, DataFrame, pd, typing, date, time
 from App.backend.StoreData.constants import PATH_DATA, Path, LIST_ACEPTABLE_INTERVAL
 
 
@@ -13,7 +13,7 @@ class GetDataStockMarket:
     _stock_name: typing.Union[str, list]
     _stock_data: DataFrame
     _interval: typing.Union[str, list]
-    _name_csv: str
+    _stock_file: str
 
     def __init__(self, stock_name: typing.Union[str, list], interval: typing.Union[str, list] = '1d') -> None:
         """
@@ -26,6 +26,34 @@ class GetDataStockMarket:
         self._CHECK_LIST_INTERVALS = LIST_ACEPTABLE_INTERVAL
         self._stock_name = stock_name
         self._interval = self._check_intervals(interval) if interval != 'all' else LIST_ACEPTABLE_INTERVAL
+
+    def _need_collect_stock_data(self) -> bool:
+        """
+        Avalia necessidade de requisitar dados das ações, caso comparando a data atual com a última data de modificação
+        no formato %Y/%m/%d
+
+        :return: Retorna True, se houver necessidade de requisitar novos dados, e retorna False se não houver.
+        """
+        try:
+            dir_path = self._PATH_DATA / self._stock_name
+            stock_file = str(dir_path) + '/' + f'{self._stock_name}_{self._interval}.csv'
+            if not os.path.exists(dir_path):
+                return True
+            else:
+                if not os.path.exists(stock_file):
+                    return True
+
+            date_today = date.today().strftime('%d/%m/%Y')
+
+            last_modified_data_file = time.strptime(time.ctime(os.path.getmtime(dir_path / stock_file)))
+            last_modified_data_file = time.strftime('%d/%m/%Y', last_modified_data_file)
+
+            if last_modified_data_file != date_today:
+                return True
+            return False
+
+        except Exception as e:
+            print(e)
 
     def _check_intervals(self, interval: typing.Union[str, list]) -> typing.Union[str, list]:
         """
@@ -70,7 +98,6 @@ class GetDataStockMarket:
             stock_ticker = yf.Ticker(self._stock_name)
             period = self._determine_period()
             self._stock_data = stock_ticker.history(period=period, interval=self._interval)
-            # print(period, self._stock_data.columns, self._stock_data.index)
         except Exception as e:
             print(e)
         else:
@@ -83,58 +110,57 @@ class GetDataStockMarket:
         :return: Retorna o caminho de armazenamento dos dados
         """
         try:
-            path = self._PATH_DATA / f"{self._stock_name}"
-            if not os.path.exists(path):
-                os.mkdir(path)
-            return path
+            dir_path = self._PATH_DATA / f"{self._stock_name}"
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path, exist_ok=True)
+            return dir_path
         except FileExistsError as e:
             print(e)
 
-    def _exists_new_stock_data(self, name_csv: str) -> bool:
+    def _exists_new_stock_data(self, stock_file: str) -> bool:
         """
         Compara os dados novos com os já existentes, sem precisar criar um novo arquivo usando todos os dados.
 
-        :param name_csv: Nome do arquivo csv junto com o caminho do mesmo arquivo
+        :param stock_file: Nome do arquivo csv junto com o caminho do mesmo arquivo
         :return: Retorna o True se existir novos dados, caso contrário, retorna False
         """
         try:
-            df = pd.read_csv(name_csv)
+            df = pd.read_csv(stock_file)
             df = df.rename(columns={'Datetime': 'Date'}, errors='ignore')
             df['Date'] = pd.to_datetime(df['Date'], utc=True)
             news_data = self._stock_data[self._stock_data.index > df['Date'].max()]
             if not len(news_data) == 0:
-                self._update_stock_data(news_data=news_data, name_csv=name_csv)
+                self._update_stock_data(news_data=news_data, stock_file=stock_file)
                 return True
             else:
                 return False
-        except ValueError as e:
-            print('bebe, algo deu errado')
+        except Exception as e:
             print(e)
 
-    def _update_stock_data(self, news_data: DataFrame, name_csv: str) -> None:
+    def _update_stock_data(self, news_data: DataFrame, stock_file: str) -> None:
         """
         Atualiza os dados das ações com os valores das novas datas
 
         :param news_data: Novos dados das ações já armazenadas
-        :param name_csv: Nome do arquivo csv junto com o caminho do mesmo arquivo
+        :param stock_file: Nome do arquivo csv junto com o caminho do mesmo arquivo
         """
         new_df = pd.concat([self._stock_data, news_data], ignore_index=False)
-        new_df.to_csv(name_csv)
+        new_df.to_csv(stock_file)
 
     def store_data(self) -> None:
         """
         Armazena os dados numa pasta específica
         """
         try:
-            path = self._create_dir_stock_data()
-            name_csv = str(path) + '/' + f'{self._stock_name}_{self._interval}.csv'
+            dir_path = self._create_dir_stock_data()
+            stock_file = str(dir_path) + '/' + f'{self._stock_name}_{self._interval}.csv'
 
-            if os.path.exists(name_csv):
-                response = self._exists_new_stock_data(name_csv=name_csv)
+            if os.path.exists(stock_file):
+                response = self._exists_new_stock_data(stock_file=stock_file)
                 if not response:
-                    self._stock_data.to_csv(name_csv)
+                    self._stock_data.to_csv(stock_file)
             else:
-                self._stock_data.to_csv(name_csv)
+                self._stock_data.to_csv(stock_file)
         except FileExistsError:
             print('Arquivo já existe!')
 
@@ -153,38 +179,37 @@ class GetDataStockMarket:
         list_intervals = self._interval
         list_stock_names = self._stock_name
         if isinstance(list_intervals, list):
-            print('é lista de intervalos')
             for interval in list_intervals:
                 self._interval = interval
                 if isinstance(list_stock_names, list):
-                    print('é lista\n')
                     for stock in list_stock_names:
                         self._stock_name = stock
+                        need_collect_data = self._need_collect_stock_data()
+                        if need_collect_data:
+                            self.collect_data()
+                            self.store_data()
+                else:
+                    need_collect_data = self._need_collect_stock_data()
+                    if need_collect_data:
                         self.collect_data()
                         self.store_data()
-                else:
-                    print('é string\n')
-                    self.collect_data()
-                    self.store_data()
         else:
             if isinstance(self._stock_name, list):
-                print('é lista\n')
                 stock_name_list = self._stock_name
                 for stock in stock_name_list:
+
                     self._stock_name = stock
+                    need_collect_data = self._need_collect_stock_data()
+                    if need_collect_data:
+                        self.collect_data()
+                        self.store_data()
+            else:
+                need_collect_data = self._need_collect_stock_data()
+                if need_collect_data:
                     self.collect_data()
                     self.store_data()
-            else:
-                print('é string\n')
-                self.collect_data()
-                self.store_data()
 
-
-if __name__ == '__main__':
-    """
-    Deve permitir que visualize primeiro o dia para não ter de fazer uma requisição atoa.
-    """
-    getdata = GetDataStockMarket(stock_name=['AAPL', 'PETR4.SA', 'TSLA'], interval='all')
-    # getdata.collect_data()
-    # getdata.store_data()
-    getdata.run()
+#
+# if __name__ == '__main__':
+#     getdata = GetDataStockMarket(stock_name=['AAPL', 'TSLA'], interval='all')
+#     getdata.run()
