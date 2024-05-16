@@ -1,5 +1,5 @@
 from App.libs.libs import yf, os, DataFrame, pd, typing, date, time
-from App.backend.StoreData.constants import PATH_DATA, Path, LIST_ACEPTABLE_INTERVAL
+from App.backend.GetStockData.constants import PATH_DATA, Path, LIST_ACEPTABLE_INTERVAL
 
 
 class GetDataStockMarket:
