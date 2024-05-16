@@ -1,5 +1,4 @@
 import typing
-
 from App.libs.libs import requests, ray, BeautifulSoup
 
 
