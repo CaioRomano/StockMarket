@@ -20,6 +20,7 @@ import dash
 from dash import dcc, callback, Input, Output, State, html, callback_context as ctx
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 
 # Uso diverso

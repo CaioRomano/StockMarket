@@ -1,4 +1,4 @@
-from App.libs.libs import Input, Output, State, html, go, dcc, ctx, dbc
+from App.libs.libs import Input, Output, State, html, go, dcc, ctx, dbc, make_subplots
 from App.frontend.Website.callbacks.helpers import get_list_stock_names, format_graph, get_data_stock
 from App.backend.GetStockData.execute import execute_get_price_stock, execute_get_data_stock
 from App.constants import LIST_ACEPTABLE_INTERVAL
@@ -57,10 +57,13 @@ def callbacks(app) -> None:
         [Input(component_id=period, component_property='n_clicks') for period in LIST_ACEPTABLE_INTERVAL]
     )
     def graph_candlestick(cur_stock, *values):
-        fig = go.Figure(layout=go.Layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)')
-        )
+        # Diminuir padding dentro do gráfico
+
+        # fig = go.Figure(layout=go.Layout(
+        #     paper_bgcolor='rgba(0,0,0,0)',
+        #     plot_bgcolor='rgba(0,0,0,0)')
+        # )
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
         if cur_stock:
             triggered = ctx.triggered
             if triggered:
