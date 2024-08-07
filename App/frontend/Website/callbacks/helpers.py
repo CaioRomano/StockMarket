@@ -16,16 +16,18 @@ def get_list_stock_names() -> list:
 def format_graph(fig):
     fig.update_layout(
         font={'color': 'rgba(255, 255, 255, 1)', 'size': 14},
+        margin=dict(l=20, r=20, t=20, b=20),
+        height=400,
         title=None,
         xaxis_title=None,
         yaxis_title=None,
         xaxis_rangeslider_visible=False,
         yaxis=dict(side='right'),
         paper_bgcolor='rgba(0, 0, 0, 0)',
-        plot_bgcolor='rgba(0, 0, 0, 0)'
+        plot_bgcolor='rgba(0, 0, 0, 0)',
     )
     fig.update_xaxes(showgrid=False, zeroline=False, showline=False)
-    fig.update_yaxes(zeroline=False, showline=False, gridcolor='rgba(255, 255, 255, 0.35)')
+    fig.update_yaxes(zeroline=False, showline=False, gridcolor='rgba(255, 255, 255, 0.05)')
     return fig
 
 

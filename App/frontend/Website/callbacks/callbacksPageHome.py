@@ -53,11 +53,11 @@ def callbacks(app) -> None:
 
     @app.callback(
         Output(component_id='output-graph', component_property='children'),
-        Input(component_id='stock-name', component_property='children'),
+        State(component_id='stock-name', component_property='children'),
         [Input(component_id=period, component_property='n_clicks') for period in LIST_ACEPTABLE_INTERVAL]
     )
-    def graph_candlestick(cur_stock, *values):
-        # Diminuir padding dentro do gráfico
+    def graph_candlestick(cur_stock, *_):
+        # Quero mostrar os
 
         # fig = go.Figure(layout=go.Layout(
         #     paper_bgcolor='rgba(0,0,0,0)',
