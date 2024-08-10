@@ -22,9 +22,9 @@ import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-
 # Uso diverso
 import os
 from datetime import date
 import time
 import re
+import numpy as np

@@ -1,5 +1,5 @@
-from App.libs.libs import Input, Output, State, html, go, dcc, ctx, dbc, make_subplots
-from App.frontend.Website.callbacks.helpers import get_list_stock_names, format_graph, get_data_stock
+from App.libs.libs import Input, Output, State, html, dcc, ctx, make_subplots
+from App.frontend.Website.callbacks.helpers import *
 from App.backend.GetStockData.execute import execute_get_price_stock, execute_get_data_stock
 from App.constants import LIST_ACEPTABLE_INTERVAL
 
@@ -54,53 +54,21 @@ def callbacks(app) -> None:
     @app.callback(
         Output(component_id='output-graph', component_property='children'),
         State(component_id='stock-name', component_property='children'),
+        Input(component_id='graph-type', component_property='value'),
         [Input(component_id=period, component_property='n_clicks') for period in LIST_ACEPTABLE_INTERVAL]
     )
-    def graph_candlestick(cur_stock, *_):
-        # Quero mostrar os
-
-        # fig = go.Figure(layout=go.Layout(
-        #     paper_bgcolor='rgba(0,0,0,0)',
-        #     plot_bgcolor='rgba(0,0,0,0)')
-        # )
+    def graph_candlestick(cur_stock, graph_type, *_):
         fig = make_subplots(specs=[[{"secondary_y": True}]])
+        fig = format_graph(fig)
         if cur_stock:
             triggered = ctx.triggered
             if triggered:
                 period = triggered[0]['prop_id'].split('.')[0]
                 if any(char.isdigit() for char in period):
                     df = get_data_stock(cur_stock=cur_stock, period=period)
-                    fig.add_trace(go.Candlestick(
-                        x=df['Date'],
-                        open=df['Open'],
-                        high=df['High'],
-                        low=df['Low'],
-                        close=df['Close']
-                    ))
-                    fig = format_graph(fig)
-        return dcc.Graph(figure=fig)
+                    fig = gen_graph(df=df, fig=fig, graph_type=graph_type)
 
-    @app.callback(
-        Output(component_id='periods-stock', component_property='options'),
-        Input(component_id='periods-stock', component_property='id')
-    )
-    def create_radio_items(_):
-        options_periods = []
-        for period in LIST_ACEPTABLE_INTERVAL:
-            options_periods.append({'label': period, 'value': period})
-        return options_periods
-
-    @app.callback(
-        Output(component_id='button-group', component_property='children'),
-        Input(component_id='button-group', component_property='id')
-    )
-    def create_period_buttons(_):
-        button_group = []
-        for period in LIST_ACEPTABLE_INTERVAL:
-            button_group.append(
-                dbc.Button([period], color='sucess', id=period)
-            )
-        return button_group
+        return dcc.Loading(dcc.Graph(figure=fig))
 
     @app.callback(
         Input(component_id='get-stock', component_property='value'),

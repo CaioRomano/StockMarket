@@ -1,8 +1,8 @@
 from App.libs.libs import dbc, dcc, html
+from App.constants import LIST_ACEPTABLE_INTERVAL
 
 
 def layout():
-    vertical_line = {'border-right': '1px solid #ffffff'}
     design = dbc.Tabs([
         dbc.Tab([
             html.Div(id='output-div'),
@@ -72,13 +72,39 @@ def layout():
                             ]),
                             dbc.CardBody(children=[
                                 html.Div(children=[
-                                    dbc.ButtonGroup(id='button-group', size='me-1'),
-                                ], className='radio-group'),
-                                html.Div(id='output-graph')
+                                    dbc.ButtonGroup(children=[dbc.Button([period], color='sucess', id=period) for period in LIST_ACEPTABLE_INTERVAL], id='button-group', size='me-1', style={'display': 'inline-block'}),
+                                ], className='radio-group', style={'display': 'inline-block'}),
+                                html.Div(children=[
+                                    dcc.Dropdown(value='Candlestick', options=['Candlestick', 'Line'], id='graph-type',
+                                                 searchable=False, clearable=False, style={
+                                            'margin-left': '25px',
+                                            'backgroundColor': 'transparent',
+                                            'color': 'white',
+                                            'width': '200px'
+                                        })
+                                    # dbc.DropdownMenu(
+                                    #     label='Graph Types',
+                                    #     menu_variant='dark',
+                                    #     color='secondary',
+                                    #     id='graph-types',
+                                    #     direction='end',
+                                    #     children=[
+                                    #         dbc.DropdownMenuItem('Candlestick Graph', id='candle-graph'),
+                                    #         dbc.DropdownMenuItem('Line Graph', id='line-graph')
+                                    #     ],
+                                    #     style={
+                                    #         'margin-left': '50px'
+                                    #     })
+                                ], style={
+                                    'display': 'inline-block',
+                                    'border-left': '1px solid #ffffff',
+                                    'margin-left': '25px',
+                                }),
+                                dcc.Loading(html.Div(id='output-graph'))
                             ]),
                         ], color='dark', inverse=True, style={
                             'margin-right': '1.5%', 'margin-left': '1.75%', 'margin-top': '1.5%'})
-                    ], width=8, style=vertical_line),
+                    ], width=8, style={'border-right': '1px solid #ffffff'}),
                     dbc.Col([
                         dbc.Card(
                             dbc.CardBody([
