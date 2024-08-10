@@ -1,5 +1,6 @@
-from App.libs.libs import yf, os, DataFrame, pd, typing, date, time
-from App.backend.GetStockData.constants import PATH_DATA, Path, LIST_ACEPTABLE_INTERVAL
+from App.libs.libs import yf, os, pl, typing, date, time
+from App.constants import Path, LIST_ACEPTABLE_INTERVAL
+from App.constants import PATH_DATA
 
 
 class GetDataStockMarket:
@@ -11,7 +12,7 @@ class GetDataStockMarket:
     _PATH_DATA: Path
 
     _stock_name: typing.Union[str, list]
-    _stock_data: DataFrame
+    _stock_data: pl.DataFrame
     _interval: typing.Union[str, list]
     _stock_file: str
 
@@ -44,7 +45,6 @@ class GetDataStockMarket:
                     return True
 
             date_today = date.today().strftime('%d/%m/%Y')
-
             last_modified_data_file = time.strptime(time.ctime(os.path.getmtime(dir_path / stock_file)))
             last_modified_data_file = time.strftime('%d/%m/%Y', last_modified_data_file)
 
@@ -53,7 +53,7 @@ class GetDataStockMarket:
             return False
 
         except Exception as e:
-            print(e)
+            print(e, '\n\tErro na avaliação!')
 
     def _check_intervals(self, interval: typing.Union[str, list]) -> typing.Union[str, list]:
         """
@@ -70,7 +70,9 @@ class GetDataStockMarket:
                     raise ValueError(f'Intervalo {i} inválido!\n\tIntervalos aceitáveis: {self._CHECK_LIST_INTERVALS}')
         elif isinstance(interval, str):
             if not (interval in self._CHECK_LIST_INTERVALS):
-                raise ValueError(f'Intervalo {interval} inválido!\n\tIntervalos aceitáveis: {self._CHECK_LIST_INTERVALS}')
+                raise ValueError(
+                    f'Intervalo {interval} inválido!\n\tIntervalos aceitáveis: {self._CHECK_LIST_INTERVALS}'
+                )
         return interval
 
     def _determine_period(self) -> str:
@@ -88,7 +90,7 @@ class GetDataStockMarket:
             period = '730d'
         return period
 
-    def collect_data(self) -> DataFrame:
+    def collect_data(self) -> pl.DataFrame:
         """
         Recupera os dados da API do Yahoo Finance
 
@@ -97,9 +99,14 @@ class GetDataStockMarket:
         try:
             stock_ticker = yf.Ticker(self._stock_name)
             period = self._determine_period()
-            self._stock_data = stock_ticker.history(period=period, interval=self._interval)
+            data_pd = stock_ticker.history(period=period, interval=self._interval)
+            data_pd.reset_index(inplace=True)
+            self._stock_data = pl.from_pandas(data_pd)
+            self._stock_data = self._stock_data.rename({'Datetime': 'Date'})
+        except pl.exceptions.SchemaFieldNotFoundError:
+            pass
         except Exception as e:
-            print(e)
+            print(e, '\n\tErro ao coletar os dados da API do Yahoo Finance!')
         else:
             return self._stock_data
 
@@ -115,7 +122,7 @@ class GetDataStockMarket:
                 os.makedirs(dir_path, exist_ok=True)
             return dir_path
         except FileExistsError as e:
-            print(e)
+            print(e, '\n\tErro na criação do caminho de armazenamento dos dados!')
 
     def _exists_new_stock_data(self, stock_file: str) -> bool:
         """
@@ -125,27 +132,29 @@ class GetDataStockMarket:
         :return: Retorna o True se existir novos dados, caso contrário, retorna False
         """
         try:
-            df = pd.read_csv(stock_file)
-            df = df.rename(columns={'Datetime': 'Date'}, errors='ignore')
-            df['Date'] = pd.to_datetime(df['Date'], utc=True)
-            news_data = self._stock_data[self._stock_data.index > df['Date'].max()]
+            df = pl.read_csv(stock_file)
+            df = df.rename({'Datetime': 'Date'})
+            max_date = df.select(pl.max('Date')).item()
+            news_data = self._stock_data.filter(pl.col('index') > max_date)
             if not len(news_data) == 0:
                 self._update_stock_data(news_data=news_data, stock_file=stock_file)
                 return True
             else:
                 return False
+        except pl.exceptions.SchemaFieldNotFoundError:
+            pass
         except Exception as e:
-            print(e)
+            print(e, '\n\tErro na comparação de dados!')
 
-    def _update_stock_data(self, news_data: DataFrame, stock_file: str) -> None:
+    def _update_stock_data(self, news_data: pl.DataFrame, stock_file: str) -> None:
         """
         Atualiza os dados das ações com os valores das novas datas
 
         :param news_data: Novos dados das ações já armazenadas
         :param stock_file: Nome do arquivo csv junto com o caminho do mesmo arquivo
         """
-        new_df = pd.concat([self._stock_data, news_data], ignore_index=False)
-        new_df.to_csv(stock_file)
+        new_df = pl.concat([self._stock_data, news_data], how='vertical')
+        new_df.write_csv(file=stock_file)
 
     def store_data(self) -> None:
         """
@@ -158,13 +167,13 @@ class GetDataStockMarket:
             if os.path.exists(stock_file):
                 response = self._exists_new_stock_data(stock_file=stock_file)
                 if not response:
-                    self._stock_data.to_csv(stock_file)
+                    self._stock_data.write_csv(file=stock_file)
             else:
-                self._stock_data.to_csv(stock_file)
+                self._stock_data.write_csv(file=stock_file)
         except FileExistsError:
             print('Arquivo já existe!')
 
-    def get_stock_data(self) -> DataFrame:
+    def get_stock_data(self) -> pl.DataFrame:
         """
         Retorna o valor dos dados coletados
 
@@ -197,7 +206,6 @@ class GetDataStockMarket:
             if isinstance(self._stock_name, list):
                 stock_name_list = self._stock_name
                 for stock in stock_name_list:
-
                     self._stock_name = stock
                     need_collect_data = self._need_collect_stock_data()
                     if need_collect_data:
@@ -209,7 +217,7 @@ class GetDataStockMarket:
                     self.collect_data()
                     self.store_data()
 
-#
-# if __name__ == '__main__':
-#     getdata = GetDataStockMarket(stock_name=['AAPL', 'TSLA'], interval='all')
-#     getdata.run()
+
+if __name__ == '__main__':
+    getdata = GetDataStockMarket(stock_name=['AAPL'], interval='all')
+    getdata.run()

@@ -1,107 +1,35 @@
-import typing
-from App.libs.libs import requests, ray, BeautifulSoup
+from App.libs.libs import BeautifulSoup, requests, PoolManager, Timeout, re
 
 
-@ray.remote(num_cpus=6)
 class GetRealTimePriceStock:
-    """
-    Classe Responsável por recuperar dados em tempo real da variação do preço em tempo real da ação especificada
-    """
+    _USER_AGENT: dict = {'User-Agent': 'Mozilla/5.0', 'Accept-Encoding': 'gzip'}
+    _http: PoolManager
 
-    _USER_AGENT: dict = {'User-Agent': 'Mozilla/5.0'}
-    _stock_price: typing.Dict[str, typing.Dict[str, float]] = dict()
-    _stock_name: str
-
-    def __init__(self, stock_name: str) -> None:
-        """
-        Método construtor da classe
-
-        :param stock_name: Nome da ação da qual deseja coletar dados de preço em tempo real.
-        """
-        self._stock_name = stock_name
-
-    def get_stock_price(self) -> typing.Dict[str, typing.Dict[str, float]]:
-        """
-        Retorna os dados sobre os preços da ação
-        :return: Dados dos preços da ação
-        """
-        return self._stock_price
-
-    def get_stock_name(self) -> str:
-        """
-        Retorna o nome da ação
-
-        :return: Retorna nome da ação
-        """
-        return self._stock_name
-
-    def set_stock_name(self, stock_name: str) -> None:
-        """
-        Insere nova ação
-
-        :param stock_name: Nome da ação
-        """
-        self._stock_name = stock_name
-
-    def _is_connected(self) -> typing.Union[bool, typing.Any]:
-        """
-        Verifica conexão com a internet
-
-        :return: Retorna True se estiver conectado a internet, junto com o conteúdo da página,
-        e retorna False se não estiver conectado
-        """
-        try:
-            url = f'https://finance.yahoo.com/quote/{self._stock_name}/history'
-            response = requests.get(url, headers=self._USER_AGENT)
-            if response.status_code == 200:
-                response.raise_for_status()
-                return True, response
-            return False, 0
-        except ConnectionError as e:
-            print(e)
-            print('Sem conexão da internet!')
+    def __init__(self):
+        self._http = PoolManager(headers=self._USER_AGENT, timeout=Timeout(connect=2.0, read=7.0))
 
     @staticmethod
-    def _web_scraping(response: typing.Any) -> typing.Tuple[float, float, float]:
-        """
-        Realiza web scraping dos dados da internet
+    def _web_content_div(web_content, class_path):
+        web_content_div = web_content.find_all('div', {'class': re.compile(class_path)})
+        try:
+            spans = web_content_div[0].find_all('span')
+            texts = [span.get_text() for span in spans]
+        except IndexError:
+            texts = []
 
-        :param response: Conteúdo da página
-        :return: Retorna uma tupla com os valores relacionados a ação
-        """
-        soup = BeautifulSoup(response.content, 'html.parser')
-        price_stream = float(soup.find('fin-streamer', class_='livePrice').get('data-value'))
-        percent_value_stream = float(
-            soup.find('fin-streamer', attrs={'data-field': 'regularMarketChangePercent'}).get('data-value'))
-        change_value_stream = float(
-            soup.find('fin-streamer', attrs={'data-field': 'regularMarketChange'}).get('data-value'))
-        return price_stream, change_value_stream, percent_value_stream
+        return texts
 
-    def get_realtime_price(self) -> None:
-        """
-        Coleta dados referentes ao preço da ação
-        """
-        is_connected, response = self._is_connected()
-        if is_connected:
-            price_stream, change_value_stream, percent_value_stream = self._web_scraping(response)
+    def real_time_price(self, stock_code: str, class_path: str = 'yf-mgkamr'):
+        url = f'https://finance.yahoo.com/quote/{stock_code}/history'
+        try:
+            response = self._http.request('GET', url, headers=self._USER_AGENT)
+            web_content = BeautifulSoup(response.data, 'lxml')
+            texts = self._web_content_div(web_content, class_path)
+            if texts:
+                price, change, pct_change = texts[0], texts[1], texts[2]
+            else:
+                price, change, pct_change = [], [], []
+        except requests.ConnectionError:
+            price, change, pct_change = [], [], []
 
-            self._stock_price[self._stock_name] = {
-                'live_price': price_stream,
-                'change-price': change_value_stream,
-                'pct-change-price': percent_value_stream
-            }
-
-    def run(self) -> None:
-        """
-        Executa a ação de captura dos preços das ações
-        """
-        self.get_realtime_price()
-
-
-if __name__ == '__main__':
-    """
-    Determinar o futuro dessa classe
-    """
-    sd = GetRealTimePriceStock.remote(stock_name='TSLA')
-    sd.run.remote()
-    print(ray.get(sd.get_stock_price.remote()))
+        return price, change, pct_change
