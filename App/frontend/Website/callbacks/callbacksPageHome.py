@@ -57,7 +57,7 @@ def callbacks(app) -> None:
         Input(component_id='graph-type', component_property='value'),
         [Input(component_id=period, component_property='n_clicks') for period in LIST_ACEPTABLE_INTERVAL]
     )
-    def graph_candlestick(cur_stock, graph_type, *_):
+    def generate_graphs(cur_stock, graph_type, *_):
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig = format_graph(fig)
         if cur_stock:

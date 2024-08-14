@@ -82,19 +82,6 @@ def layout():
                                             'color': 'white',
                                             'width': '200px'
                                         })
-                                    # dbc.DropdownMenu(
-                                    #     label='Graph Types',
-                                    #     menu_variant='dark',
-                                    #     color='secondary',
-                                    #     id='graph-types',
-                                    #     direction='end',
-                                    #     children=[
-                                    #         dbc.DropdownMenuItem('Candlestick Graph', id='candle-graph'),
-                                    #         dbc.DropdownMenuItem('Line Graph', id='line-graph')
-                                    #     ],
-                                    #     style={
-                                    #         'margin-left': '50px'
-                                    #     })
                                 ], style={
                                     'display': 'inline-block',
                                     'border-left': '1px solid #ffffff',
@@ -124,4 +111,3 @@ def layout():
         ], id='second-tab', label='second')
     ])
     return design
-# Deve-se criar um callback acerca das tabelas
