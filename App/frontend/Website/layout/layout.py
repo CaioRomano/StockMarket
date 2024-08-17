@@ -118,6 +118,20 @@ def layout():
                     html.P(['Olá'])
                 ])
             )
-        ], id='second-tab', label='second')
+        ], id='second-tab', label='second'),
+        dbc.Tab([
+            dbc.Card(
+                dbc.CardBody([
+                    dbc.Button(['Shutdown Server'], color='danger', id='shutdown-btn', outline=True),
+                    dbc.Alert(
+                        children=['Server is offline!\nYou can close the page!'],
+                        color='success',
+                        dismissable=True,
+                        duration=5 * 1000,
+                        is_open=False,
+                        id='alert-shutdown-server', style={'width': '25%', 'margin-top': '20px'})
+                ])
+            )
+        ], id='shutdown-server', label='shutdown server')
     ])
     return design

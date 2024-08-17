@@ -6,7 +6,8 @@ from App.constants import LIST_ACEPTABLE_INTERVAL
 
 def callbacks(app: dash.Dash) -> None:
     """
-    Função que agraga todos os callbacks da página dash
+    Função que agraga todos os callbacks da página Dash
+
     :param app: App responsável por rodar o site web
     """
     @app.callback(
@@ -22,13 +23,6 @@ def callbacks(app: dash.Dash) -> None:
         """
         return get_list_stock_names()
 
-    # @app.callback(
-    #     Output(component_id='output-div', component_property='children'),
-    #     Input(component_id='dropdown-menu-stocks', component_property='value')
-    # )
-    # def output_demo(_):
-    #     return _
-
     @app.callback(
         Output(component_id='stock-name', component_property='children'),
         Input(component_id='dropdown-menu-stocks', component_property='value'),
@@ -36,7 +30,8 @@ def callbacks(app: dash.Dash) -> None:
     )
     def set_stock_name(sel_stock: str, cur_stock: str) -> str:
         """
-        Callback responsável por manter o código da ação no elemento html até selecionar outra ação pelo elemento dropdown
+        Callback responsável por manter o código da ação no elemento html
+        até selecionar outra ação pelo elemento dropdown
 
         :param sel_stock: Referencia a ação selecionada
         :param cur_stock: Referencia a última ação selecionada
@@ -56,6 +51,7 @@ def callbacks(app: dash.Dash) -> None:
     def update_prices(_, cur_stock: str) -> list:
         """
         Callback responsável por mostrar as informações referentes ao preço da ação
+
         :param cur_stock: Referencia a última ação selecionada
         :return: Retorna as informações da ação
         """
@@ -93,7 +89,7 @@ def callbacks(app: dash.Dash) -> None:
             if triggered:
                 period = triggered[0]['prop_id'].split('.')[0]
                 if any(char.isdigit() for char in period):
-                    df = get_data_stock(cur_stock=cur_stock, period=period)
+                    df = get_data_stock(stock_code=cur_stock, period=period)
                     fig = gen_graph(df=df, fig=fig, graph_type=graph_type)
 
         return dcc.Loading(dcc.Graph(figure=fig))
@@ -111,3 +107,32 @@ def callbacks(app: dash.Dash) -> None:
         """
         if n_clicks is not None:
             execute_get_data_stock(stock_code=stock_code)
+
+    @app.callback(
+        Output(component_id='alert-shutdown-server', component_property='is_open'),
+        Input(component_id='shutdown-btn', component_property='n_clicks'),
+        State(component_id='alert-shutdown-server', component_property='is_open')
+    )
+    def alert_shutdown_server(n_clicks, is_open) -> bool:
+        """
+        Callback responsável por alertar usuário sobre desligamento do servidor
+
+        :param n_clicks: Número de clicks feitos pelo usuário. Identifica quando o botão foi apertado pelo usuário
+        :param is_open: Atributo do elemento Alert, permitindo ser visível ao usuário
+        :return: Retorna valor booleando indicando o estado de visibilidade do elemento Alert
+        """
+        if n_clicks:
+            return not is_open
+        return is_open
+
+    @app.callback(
+        Input(component_id='alert-shutdown-server', component_property='is_open')
+    )
+    def exit_gracefully(alert_shown) -> None:
+        """
+        Callback que desliga o servidor do Dash através de um botão
+
+        :param alert_shown: atributo que identifica se o elemento alert está visível ou não
+        """
+        if alert_shown:
+            os._exit(0)
