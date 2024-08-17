@@ -3,6 +3,11 @@ from App.constants import LIST_ACEPTABLE_INTERVAL
 
 
 def layout():
+    """
+    Função responsável por criar o layout da página web
+
+    :return: Retorna o layout da página
+    """
     design = dbc.Tabs([
         dbc.Tab([
             html.Div(id='output-div'),
@@ -72,7 +77,12 @@ def layout():
                             ]),
                             dbc.CardBody(children=[
                                 html.Div(children=[
-                                    dbc.ButtonGroup(children=[dbc.Button([period], color='sucess', id=period) for period in LIST_ACEPTABLE_INTERVAL], id='button-group', size='me-1', style={'display': 'inline-block'}),
+                                    dbc.ButtonGroup(children=[
+                                        dbc.Button(
+                                            [period], color='sucess', id=period) for period in LIST_ACEPTABLE_INTERVAL],
+                                        id='button-group',
+                                        size='me-1',
+                                        style={'display': 'inline-block'}),
                                 ], className='radio-group', style={'display': 'inline-block'}),
                                 html.Div(children=[
                                     dcc.Dropdown(value='Candlestick', options=['Candlestick', 'Line'], id='graph-type',
