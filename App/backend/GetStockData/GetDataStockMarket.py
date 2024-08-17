@@ -11,21 +11,20 @@ class GetDataStockMarket:
     _CHECK_LIST_INTERVALS: list
     _PATH_DATA: Path
 
-    _stock_name: typing.Union[str, list]
+    _stock_code: typing.Union[str, list]
     _stock_data: pl.DataFrame
     _interval: typing.Union[str, list]
-    _stock_file: str
 
-    def __init__(self, stock_name: typing.Union[str, list], interval: typing.Union[str, list] = '1d') -> None:
+    def __init__(self, stock_code: typing.Union[str, list], interval: typing.Union[str, list] = '1d') -> None:
         """
         Método construtor da classe
 
-        :param stock_name: Nome da ação a ser coletada
+        :param stock_code: Código da ação (ex: BTC)
         :param interval: Intervalo dos dados a serem obtidos
         """
         self._PATH_DATA = PATH_DATA
         self._CHECK_LIST_INTERVALS = LIST_ACEPTABLE_INTERVAL
-        self._stock_name = stock_name
+        self._stock_code = stock_code
         self._interval = self._check_intervals(interval) if interval != 'all' else LIST_ACEPTABLE_INTERVAL
 
     def _need_collect_stock_data(self) -> bool:
@@ -33,11 +32,11 @@ class GetDataStockMarket:
         Avalia necessidade de requisitar dados das ações, caso comparando a data atual com a última data de modificação
         no formato %Y/%m/%d
 
-        :return: Retorna True, se houver necessidade de requisitar novos dados, e retorna False se não houver.
+        :return: Retorna True, se houver necessidade de requisitar novos dados, e False, se não houver.
         """
         try:
-            dir_path = self._PATH_DATA / self._stock_name
-            stock_file = str(dir_path) + '/' + f'{self._stock_name}_{self._interval}.csv'
+            dir_path = self._PATH_DATA / self._stock_code
+            stock_file = str(dir_path) + '/' + f'{self._stock_code}_{self._interval}.csv'
             if not os.path.exists(dir_path):
                 return True
             else:
@@ -94,10 +93,10 @@ class GetDataStockMarket:
         """
         Recupera os dados da API do Yahoo Finance
 
-        :return: Retorna os dados da API no formato dataframe do pandas
+        :return: Retorna os dados da API no formato dataframe do polars
         """
         try:
-            stock_ticker = yf.Ticker(self._stock_name)
+            stock_ticker = yf.Ticker(self._stock_code)
             period = self._determine_period()
             data_pd = stock_ticker.history(period=period, interval=self._interval)
             data_pd.reset_index(inplace=True)
@@ -117,7 +116,7 @@ class GetDataStockMarket:
         :return: Retorna o caminho de armazenamento dos dados
         """
         try:
-            dir_path = self._PATH_DATA / f"{self._stock_name}"
+            dir_path = self._PATH_DATA / f"{self._stock_code}"
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path, exist_ok=True)
             return dir_path
@@ -162,7 +161,7 @@ class GetDataStockMarket:
         """
         try:
             dir_path = self._create_dir_stock_data()
-            stock_file = str(dir_path) + '/' + f'{self._stock_name}_{self._interval}.csv'
+            stock_file = str(dir_path) + '/' + f'{self._stock_code}_{self._interval}.csv'
 
             if os.path.exists(stock_file):
                 response = self._exists_new_stock_data(stock_file=stock_file)
@@ -186,13 +185,13 @@ class GetDataStockMarket:
         Executa as tarefas de coleta e armazenamento de dados
         """
         list_intervals = self._interval
-        list_stock_names = self._stock_name
+        list_stock_codes = self._stock_code
         if isinstance(list_intervals, list):
             for interval in list_intervals:
                 self._interval = interval
-                if isinstance(list_stock_names, list):
-                    for stock in list_stock_names:
-                        self._stock_name = stock
+                if isinstance(list_stock_codes, list):
+                    for stock in list_stock_codes:
+                        self._stock_code = stock
                         need_collect_data = self._need_collect_stock_data()
                         if need_collect_data:
                             self.collect_data()
@@ -203,10 +202,10 @@ class GetDataStockMarket:
                         self.collect_data()
                         self.store_data()
         else:
-            if isinstance(self._stock_name, list):
-                stock_name_list = self._stock_name
-                for stock in stock_name_list:
-                    self._stock_name = stock
+            if isinstance(self._stock_code, list):
+                stock_code_list = self._stock_code
+                for stock in stock_code_list:
+                    self._stock_code = stock
                     need_collect_data = self._need_collect_stock_data()
                     if need_collect_data:
                         self.collect_data()
@@ -219,5 +218,5 @@ class GetDataStockMarket:
 
 
 if __name__ == '__main__':
-    getdata = GetDataStockMarket(stock_name=['AAPL'], interval='all')
+    getdata = GetDataStockMarket(stock_code=['AAPL'], interval='all')
     getdata.run()
