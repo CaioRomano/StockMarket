@@ -136,3 +136,21 @@ def callbacks(app: dash.Dash) -> None:
         """
         if alert_shown:
             os._exit(0)
+
+    @app.callback(
+        Output(component_id='alert-completed-download', component_property='is_open'),
+        Output(component_id='alert-completed-download', component_property='children'),
+        Input(component_id='add-stock', component_property='n_clicks'),
+        State(component_id='alert-completed-download', component_property='is_open')
+    )
+    def alert_completed_download(n_clicks, is_open) -> tuple[bool, str]:
+        """
+        Callback responsável por alertar usuário se o download de uma ação foi bem sucedida ou não
+
+        :param n_clicks: Número de clicks feitos pelo usuário. Identifica quando o botão foi apertado pelo usuário
+        :param is_open: Atributo do elemento Alert, permitindo ser visível ao usuário
+        :return: Retorna valor booleando indicando o estado de visibilidade do elemento Alert
+        """
+        if n_clicks:
+            return not is_open, 'Download Completo!'
+        return is_open, ''

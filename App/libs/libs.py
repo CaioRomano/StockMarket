@@ -1,4 +1,3 @@
-
 # Arquivo responsável por armazenar as bibliotecas sendo usadas pelo programa
 
 
@@ -29,5 +28,3 @@ import time
 import re
 import numpy as np
 from abc import ABC, abstractmethod
-
-# Machine Learning

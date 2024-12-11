@@ -25,5 +25,5 @@ def execute_get_data_stock(stock_code: str) -> None:
     :param stock_code: Código da ação (ex: BTC)
     """
     stock_code = ''.join(stock_code.upper().split(',')).split()
-    getdata = GetDataStockMarket(stock_name=stock_code, interval='all')
+    getdata = GetDataStockMarket(stock_code=stock_code, interval='all')
     getdata.run()

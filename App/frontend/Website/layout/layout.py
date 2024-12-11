@@ -49,6 +49,15 @@ def layout():
                                             'margin-left': '2%'
                                         })
                                     ], width=6)
+                                ]),
+                                dbc.Row(children=[
+                                    dbc.Alert(
+                                        children=[''],
+                                        color='success',
+                                        dismissable=True,
+                                        duration=5 * 1000,
+                                        is_open=False,
+                                        id='alert-completed-download', style={'width': '25%', 'margin-top': '20px'})
                                 ])
                             ]), style={
                                 'display': 'inline-block',
@@ -101,24 +110,10 @@ def layout():
                             ]),
                         ], color='dark', inverse=True, style={
                             'margin-right': '1.5%', 'margin-left': '1.75%', 'margin-top': '1.5%'})
-                    ], width=8, style={'border-right': '1px solid #ffffff'}),
-                    dbc.Col([
-                        dbc.Card(
-                            dbc.CardBody([
-                                html.H3('Olá'),
-                            ])
-                        )
-                    ], width=4)
+                    ], style={'border-right': '1px solid #ffffff'}),
                 ])
             ], id='main-div'),
-        ], id='first-tab', label='main'),
-        dbc.Tab([
-            dbc.Card(
-                dbc.CardBody([
-                    html.P(['Olá'])
-                ])
-            )
-        ], id='second-tab', label='second'),
+        ], id='first-tab', label='Dashboard'),
         dbc.Tab([
             dbc.Card(
                 dbc.CardBody([
