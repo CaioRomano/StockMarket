@@ -1,0 +1,9 @@
+beautifulsoup4==4.12.3
+dash==2.17.0
+dash_bootstrap_components==1.6.0
+numpy==2.2.0
+plotly==5.22.0
+polars==1.17.1
+Requests==2.32.3
+urllib3==2.2.3
+yfinance==0.2.38
