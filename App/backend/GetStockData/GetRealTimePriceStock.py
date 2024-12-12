@@ -8,6 +8,7 @@ class GetRealTimePriceStock:
 
     _USER_AGENT: dict = {'User-Agent': 'Mozilla/5.0', 'Accept-Encoding': 'gzip'}
     _http: PoolManager
+    _NAMECLASS_WEBSCRAPING: str = 'yf-1tejb6'
 
     def __init__(self) -> None:
         """
@@ -33,7 +34,7 @@ class GetRealTimePriceStock:
 
         return texts
 
-    def real_time_price(self, stock_code: str, class_path: str = 'yf-mgkamr') -> tuple:
+    def real_time_price(self, stock_code: str) -> tuple:
         """
         Captura o preço de uma ação em tempo real
 
@@ -45,7 +46,7 @@ class GetRealTimePriceStock:
         try:
             response = self._http.request('GET', url, headers=self._USER_AGENT)
             web_content = BeautifulSoup(response.data, 'lxml')
-            texts = self._web_content_div(web_content, class_path)
+            texts = self._web_content_div(web_content, self._NAMECLASS_WEBSCRAPING)
             if texts:
                 price, change, pct_change = texts[0], texts[1], texts[2]
             else:
